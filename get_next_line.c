@@ -6,7 +6,7 @@
 /*   By: crenfrow <crenfrow@student.42.us.org>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/10/28 12:50:29 by crenfrow          #+#    #+#             */
-/*   Updated: 2016/11/04 03:00:12 by crenfrow         ###   ########.fr       */
+/*   Updated: 2016/11/10 12:11:42 by crenfrow         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,58 +16,73 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
+int		line_length(char *buffer, char c)
+{
+	int length;
+
+	length = 0;
+	while (buffer[length] != c && buffer[length])
+		length++;
+	return (length);
+}
+
+int		get_line(char *buffer, char **line)
+{
+	int len;
+
+	len = line_length(buffer, '\n');
+	if (len == 0)
+		return (0);
+	*line = ft_strjoin(*line, ft_strsub(buffer, 0, len));
+	if (buffer[len] != '\n')
+		return (1);
+	else
+		return (0);
+}
+
 int		get_next_line(const int fd, char **line)
 {
 	static t_file	*file;
-	int i;
-	int fs;
+	int				fs;
+	int				len;
 
-	i = 0;
+	if (fd < 0 || !line)
+		return (-1);
 	fs = 1;
 	if (!file)
-		file = (t_file *)ft_memalloc(sizeof(t_file));
-	while (fs > 0)
 	{
-		fs = read(fd, file->buffer, BUFF_SIZE);
-		while (file->buffer[i] != '\n' && i <= BUFF_SIZE)
-			i++;
-		ft_putendl(ft_itoa(i));
-		if (i <= BUFF_SIZE && file->buffer[i] == '\n')
+		file = (t_file *)ft_memalloc(sizeof(t_file));
+		file->file_desc = fd;
+		file->status = 1;
+	}
+	while (fs)
+	{
+		len = line_length(file->buffer, '\n');
+		if (file->buffer[len] == '\n')
 		{
-			if (i == BUFF_SIZE)
-				return (1);
-			*line = ft_strjoin(*line, ft_strsub(file->buffer, 0, i));
+			*line = ft_strdup(file->buffer +
+				line_length(file->buffer, '\n') + 1);
 		}
+		if (file->status == 1)
+		{
+			fs = read(fd, file->buffer, BUFF_SIZE);
+			if (fs < BUFF_SIZE)
+			{
+				file->status = 0;
+				file->next = file->buffer;
+			}
+		}
+		if (file->status == 1)
+			fs = get_line(file->buffer, line);
 		else
 		{
-			*line = ft_strjoin(*line, file->buffer);
+			fs = get_line(file->next, line);
+			file->next = ft_strchr(file->next, '\n') + 1;
+			// if ()
+			// 	return (0);
 		}
-		i = 0;
+		// if (!file->buffer[ft_strlen(file->buffer)])
+		// 	return (0);
 	}
-	return (0);
-}
-
-/*
-**==============================[DELET THIS]====================================
-*/
-int	main(int argc, char **argv)
-{
-	(void)	argc;
-	int		fs = 1;
-	int		fd = open(argv[1], O_RDONLY);
-	//int		fd2 = open(argv[2], O_RDONLY);
-	char	**line = ft_memalloc(sizeof(char **));
-	*line = (char *)ft_memalloc(sizeof(char) * BUFF_SIZE);
-	//t_list	**root_list = (t_list **)ft_memalloc(sizeof(t_list *));
-
-	while (fs > 0)
-	{
-		fs = get_next_line(fd, line);
-		ft_putendl(*line);
-		//ft_putstr(*line);
-		/*
-		fs = get_next_line(fd2, line);
-		ft_putendl(*line);
-		*/
-	}
+	return (1);
 }
