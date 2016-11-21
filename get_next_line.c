@@ -6,7 +6,7 @@
 /*   By: crenfrow <crenfrow@student.42.us.org>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/10/28 12:50:29 by crenfrow          #+#    #+#             */
-/*   Updated: 2016/11/10 12:11:42 by crenfrow         ###   ########.fr       */
+/*   Updated: 2016/11/19 08:17:26 by crenfrow         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,73 +16,79 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-int		line_length(char *buffer, char c)
-{
-	int length;
+// OMFG REMOVE THIS BEFORE SUBMITTING
+#include <stdio.h>
+/////////////////////////////////////
 
-	length = 0;
-	while (buffer[length] != c && buffer[length])
-		length++;
-	return (length);
+int line_len(char *buff)
+{
+	int i;
+
+	i = 0;
+	if (buff)
+	{
+		while(buff[i] != '\n' && buff[i])
+			i++;
+	}
+	return (i);
 }
 
-int		get_line(char *buffer, char **line)
+int		get_line(t_file **file, char *buffer, char **line)
 {
 	int len;
+	int nxt_len;
 
-	len = line_length(buffer, '\n');
-	if (len == 0)
+	len = line_len(buffer);
+	nxt_len = 0;
+	if ((*file)->next)
+	{
+		*line = ft_strdup(ft_strjoin(*line, (*file)->next));
+		ft_strclr((*file)->next);
+	}
+	if (len < BUFF_SIZE && buffer[len + 1])
+	{
+		nxt_len = line_len(ft_strchr(buffer, '\n') + 1);
+		(*file)->next = ft_strdup(ft_strsub(ft_strchr(&buffer[len + 2], '\n'), 0, nxt_len));
+	}
+	*line = ft_strdup(ft_strjoin(*line, ft_strsub(buffer, 0, len)));
+	if (len < BUFF_SIZE && !buffer[len])
 		return (0);
-	*line = ft_strjoin(*line, ft_strsub(buffer, 0, len));
-	if (buffer[len] != '\n')
-		return (1);
 	else
-		return (0);
+		return (1);
 }
 
 int		get_next_line(const int fd, char **line)
 {
 	static t_file	*file;
-	int				fs;
-	int				len;
+	int			 	fs; // File-status
+	int				ls; // Line-status
 
 	if (fd < 0 || !line)
 		return (-1);
 	fs = 1;
+	ls = 1;
 	if (!file)
 	{
 		file = (t_file *)ft_memalloc(sizeof(t_file));
 		file->file_desc = fd;
 		file->status = 1;
 	}
-	while (fs)
+	if (file->line_sz == 0)
+		ft_strclr(*line);
+	while (ls)
 	{
-		len = line_length(file->buffer, '\n');
-		if (file->buffer[len] == '\n')
-		{
-			*line = ft_strdup(file->buffer +
-				line_length(file->buffer, '\n') + 1);
-		}
 		if (file->status == 1)
 		{
 			fs = read(fd, file->buffer, BUFF_SIZE);
 			if (fs < BUFF_SIZE)
-			{
 				file->status = 0;
-				file->next = file->buffer;
-			}
+			file->buffer[fs] = 0;
+			ls = get_line(&file, file->buffer, line);
 		}
-		if (file->status == 1)
-			fs = get_line(file->buffer, line);
 		else
-		{
-			fs = get_line(file->next, line);
-			file->next = ft_strchr(file->next, '\n') + 1;
-			// if ()
-			// 	return (0);
-		}
-		// if (!file->buffer[ft_strlen(file->buffer)])
-		// 	return (0);
+			ls = get_line(&file, &(file)->buffer[file->file_read + 1], line);
+		if (!file->buffer[file->file_read] && !file->status)
+			return (0);
 	}
 	return (1);
 }
