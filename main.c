@@ -6,13 +6,16 @@
 /*   By: crenfrow <crenfrow@student.42.us.org>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/10/28 14:04:01 by crenfrow          #+#    #+#             */
-/*   Updated: 2016/11/17 20:58:11 by crenfrow         ###   ########.fr       */
+/*   Updated: 2016/12/02 02:09:29 by crenfrow         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <fcntl.h>
 #include "libft.h"
 #include "get_next_line.h"
+#include <stdio.h>
+
+// int		line_len(char *buff);
 
 int	main(int argc, char **argv)
 {

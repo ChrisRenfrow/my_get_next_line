@@ -6,7 +6,7 @@
 /*   By: crenfrow <crenfrow@student.42.us.org>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/10/28 12:50:29 by crenfrow          #+#    #+#             */
-/*   Updated: 2016/11/19 08:17:26 by crenfrow         ###   ########.fr       */
+/*   Updated: 2016/12/02 06:00:19 by crenfrow         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,79 +16,74 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-// OMFG REMOVE THIS BEFORE SUBMITTING
-#include <stdio.h>
-/////////////////////////////////////
+// Function count: 3 of 5
 
-int line_len(char *buff)
+char	*ft_realloc(char *orig, int new)
 {
-	int i;
-
-	i = 0;
-	if (buff)
-	{
-		while(buff[i] != '\n' && buff[i])
-			i++;
-	}
-	return (i);
+	char *fresh;
+	fresh = ft_strnew(new);
+	fresh = ft_strcpy(fresh, orig);
+	free(orig);
+	return (fresh);
 }
 
-int		get_line(t_file **file, char *buffer, char **line)
+t_file	*init_file(int fd)
+{
+	t_file *file;
+
+	file				= (t_file *)ft_memalloc(sizeof(t_file));
+	file->next 			= 0;
+	file->file_desc		= fd;
+	file->found_eof		= 0;
+	file->bytes_read	= 0;
+	file->bytes_parsed	= 0;
+	return (file);
+}
+
+int		line_len(char *buff)
 {
 	int len;
-	int nxt_len;
 
-	len = line_len(buffer);
-	nxt_len = 0;
-	if ((*file)->next)
-	{
-		*line = ft_strdup(ft_strjoin(*line, (*file)->next));
-		ft_strclr((*file)->next);
-	}
-	if (len < BUFF_SIZE && buffer[len + 1])
-	{
-		nxt_len = line_len(ft_strchr(buffer, '\n') + 1);
-		(*file)->next = ft_strdup(ft_strsub(ft_strchr(&buffer[len + 2], '\n'), 0, nxt_len));
-	}
-	*line = ft_strdup(ft_strjoin(*line, ft_strsub(buffer, 0, len)));
-	if (len < BUFF_SIZE && !buffer[len])
-		return (0);
-	else
-		return (1);
+	len = 0;
+	while (buff[len] != '0' && buff[len] != '\n')
+		len++;
+	if (buff[len] == '\n')	// If the end character is a '\n'
+		return(len - 1);	// Return len minus 1
+	return (len);			// Otherwise return len
 }
+
+// int		get_line(char **line, t_file **file)
+// {
+// 	if ()
+// 	return (1);
+// }
 
 int		get_next_line(const int fd, char **line)
 {
-	static t_file	*file;
-	int			 	fs; // File-status
-	int				ls; // Line-status
+	static	t_file *file;		// Static variable to save across instances
+	int 	rs;					// Read Status: Return value from read()
+	int		ls;					// Line Status: Return value from get_line()
 
-	if (fd < 0 || !line)
-		return (-1);
-	fs = 1;
+	rs = 0;
 	ls = 1;
-	if (!file)
-	{
-		file = (t_file *)ft_memalloc(sizeof(t_file));
-		file->file_desc = fd;
-		file->status = 1;
-	}
-	if (file->line_sz == 0)
-		ft_strclr(*line);
-	while (ls)
-	{
-		if (file->status == 1)
+	if (!file)					// If file has not been initialized
+		file = init_file(fd);	// Initialize new t_file
+	if (fd < 3 || !line)		// Input check
+		return (-1);			// Bad input: return -1
+	while (ls)					// While line is unfinished
+	{							// Continue reading
+		if (!file->found_eof)	// If EOF has been found, skip to get_line
 		{
-			fs = read(fd, file->buffer, BUFF_SIZE);
-			if (fs < BUFF_SIZE)
-				file->status = 0;
-			file->buffer[fs] = 0;
-			ls = get_line(&file, file->buffer, line);
+			if (!(rs = read(fd, file->buffer, BUFF_SIZE)))
+				return (-1);				// Returns -1 if read err
+			if (rs == 0) 					// read() has found EOF
+				file->found_eof = 1;
+			file->buffer[rs] = 0; 			// Null terminating
+			file->bytes_read += rs;			// Update bytes read
 		}
-		else
-			ls = get_line(&file, &(file)->buffer[file->file_read + 1], line);
-		if (!file->buffer[file->file_read] && !file->status)
-			return (0);
+		ls = get_line(line, &file);
+		if (file->bytes_parsed >= file->bytes_read)
+			return (0);						// End condition
 	}
 	return (1);
 }
