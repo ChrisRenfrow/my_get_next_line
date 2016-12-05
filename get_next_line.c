@@ -5,10 +5,16 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: crenfrow <crenfrow@student.42.us.org>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2016/10/28 12:50:29 by crenfrow          #+#    #+#             */
-/*   Updated: 2016/12/02 06:00:19 by crenfrow         ###   ########.fr       */
+/*   Created: 2016/12/04 16:45:09 by crenfrow          #+#    #+#             */
+/*   Updated: 2016/12/05 01:02:44 by crenfrow         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+/*
+**	 == Mk.3 :rolling_eyes: ==
+**	In this version my focus is to only call read when I need to instead of
+**	trying to manage both the buffer and line simultaneously.
+*/
 
 #include "libft.h"
 #include "get_next_line.h"
@@ -16,23 +22,35 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-// Function count: 3 of 5
+/*
+**	V libft addition candidates V
+*/
 
-char	*ft_realloc(char *orig, int new)
+/*
+**	Finds the length of the string up to NULL or the specified char
+*/
+
+int ft_strlchr(char *str, int c)
 {
-	char *fresh;
-	fresh = ft_strnew(new);
-	fresh = ft_strcpy(fresh, orig);
-	free(orig);
-	return (fresh);
+	int l;
+
+	l = 0;
+	while (str[l] != 0 && str[l] != c)
+		l++;
+	return (l);
 }
+
+/*
+**	V get_next_line functions V
+*/
 
 t_file	*init_file(int fd)
 {
 	t_file *file;
 
 	file				= (t_file *)ft_memalloc(sizeof(t_file));
-	file->next 			= 0;
+	file->next 			= ft_strnew(1);
+	file->nline			= ft_strnew(1);
 	file->file_desc		= fd;
 	file->found_eof		= 0;
 	file->bytes_read	= 0;
@@ -40,50 +58,76 @@ t_file	*init_file(int fd)
 	return (file);
 }
 
-int		line_len(char *buff)
+int read_buffer(t_file **file)
 {
-	int len;
+	int ret;
+	t_file *fptr;
 
-	len = 0;
-	while (buff[len] != '0' && buff[len] != '\n')
-		len++;
-	if (buff[len] == '\n')	// If the end character is a '\n'
-		return(len - 1);	// Return len minus 1
-	return (len);			// Otherwise return len
+	ret = 0;
+	fptr = *file;
+	ret = read(fptr->file_desc, fptr->buffer, BUFF_SIZE);
+	fptr->buffer[ret] = 0;
+	fptr->bytes_read += ret;
+	if (ret < BUFF_SIZE)
+		fptr->found_eof++;
+	if (ret < 0)
+		return (-1);
+	return (ret);
+}
+// Close but no cigar, need to figure out reliable way to advance the working
+// buffer to the next section. Make use of bytes_parsed?
+int get_line(t_file **file)
+{
+	int llen;
+	int ret;
+	char *buffer;
+	t_file *fptr;
+
+	llen = 0;
+	fptr = *file;
+	ft_strclr(fptr->nline);
+	buffer = fptr->buffer;
+	while (fptr->buffer[llen] != '\n')
+	{
+		if (fptr->next[0])
+		{
+			fptr->nline = ft_strjoin(fptr->nline, fptr->next);
+			ft_strclr(fptr->next);
+		}
+		if (fptr->bytes_parsed >= fptr->bytes_read)
+		{
+			ret = read(fptr->file_desc, buffer, BUFF_SIZE);
+			if (ret <= 0)
+				return (ret);
+		}
+		llen = ft_strlchr(buffer, '\n');
+		if (llen == 0)
+			return (0);
+		if (llen < BUFF_SIZE)
+		{
+			fptr->nline = ft_strjoin(fptr->nline, ft_strsub(buffer, 0, llen));
+			fptr->next = ft_strsub(buffer, llen + 1, \
+				ft_strlchr(buffer + (llen + 1), '\n'));
+		}
+		else
+			fptr->nline = ft_strjoin(fptr->nline, buffer);
+		fptr->bytes_parsed += llen;
+	}
+	return (1);
 }
 
-// int		get_line(char **line, t_file **file)
-// {
-// 	if ()
-// 	return (1);
-// }
-
-int		get_next_line(const int fd, char **line)
+int get_next_line(const int fd, char **line)
 {
-	static	t_file *file;		// Static variable to save across instances
-	int 	rs;					// Read Status: Return value from read()
-	int		ls;					// Line Status: Return value from get_line()
+	static t_file	*file;
+	int 			ret;
 
-	rs = 0;
-	ls = 1;
-	if (!file)					// If file has not been initialized
-		file = init_file(fd);	// Initialize new t_file
-	if (fd < 3 || !line)		// Input check
-		return (-1);			// Bad input: return -1
-	while (ls)					// While line is unfinished
-	{							// Continue reading
-		if (!file->found_eof)	// If EOF has been found, skip to get_line
-		{
-			if (!(rs = read(fd, file->buffer, BUFF_SIZE)))
-				return (-1);				// Returns -1 if read err
-			if (rs == 0) 					// read() has found EOF
-				file->found_eof = 1;
-			file->buffer[rs] = 0; 			// Null terminating
-			file->bytes_read += rs;			// Update bytes read
-		}
-		ls = get_line(line, &file);
-		if (file->bytes_parsed >= file->bytes_read)
-			return (0);						// End condition
-	}
+	if (fd < 3 || !line)
+		return (-1);
+	if (!file)
+		file = init_file(fd);
+	ret = get_line(&file);
+	if (ret <= 0)
+		return (ret);
+	*line = ft_strdup(file->nline);
 	return (1);
 }

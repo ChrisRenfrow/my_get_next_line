@@ -6,7 +6,7 @@
 /*   By: crenfrow <crenfrow@student.42.us.org>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/10/28 12:58:24 by crenfrow          #+#    #+#             */
-/*   Updated: 2016/12/02 05:59:56 by crenfrow         ###   ########.fr       */
+/*   Updated: 2016/12/05 00:59:38 by crenfrow         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,17 +18,13 @@
 /*
 ** Tour de t_file:
 **
-** buffer == The buffer from read()
-** next == the ENTIRE next line if available, remains NULL when not in use
-** file_desc == the file_descriptor, to be used in the case of multiple files
-** found_eof == 1 if read() returned 0, 0 by default
-** bytes_read == How many bytes read() has assigned to buffer
-** bytes_parsed == how many bytes we've processed and given to **line
+**
 */
 
 typedef	struct	s_file
 {
 	char		buffer[BUFF_SIZE + 1];
+	char		*nline;
 	char		*next;
 	int			file_desc;
 	int			found_eof;
