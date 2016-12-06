@@ -6,7 +6,7 @@
 /*   By: crenfrow <crenfrow@student.42.us.org>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/04 16:45:09 by crenfrow          #+#    #+#             */
-/*   Updated: 2016/12/05 01:02:44 by crenfrow         ###   ########.fr       */
+/*   Updated: 2016/12/06 05:20:02 by crenfrow         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,9 +52,6 @@ t_file	*init_file(int fd)
 	file->next 			= ft_strnew(1);
 	file->nline			= ft_strnew(1);
 	file->file_desc		= fd;
-	file->found_eof		= 0;
-	file->bytes_read	= 0;
-	file->bytes_parsed	= 0;
 	return (file);
 }
 
@@ -74,46 +71,51 @@ int read_buffer(t_file **file)
 		return (-1);
 	return (ret);
 }
-// Close but no cigar, need to figure out reliable way to advance the working
-// buffer to the next section. Make use of bytes_parsed?
+
 int get_line(t_file **file)
 {
 	int llen;
 	int ret;
-	char *buffer;
 	t_file *fptr;
 
 	llen = 0;
 	fptr = *file;
+	if (!fptr->next[0])
+		ret = read_buffer(file);
 	ft_strclr(fptr->nline);
-	buffer = fptr->buffer;
-	while (fptr->buffer[llen] != '\n')
+	while ((fptr->next[0] || fptr->buffer[0]) && !fptr->found_eof)
 	{
 		if (fptr->next[0])
 		{
-			fptr->nline = ft_strjoin(fptr->nline, fptr->next);
-			ft_strclr(fptr->next);
+			llen = ft_strlchr(fptr->next, '\n');
+			fptr->nline = ft_strjoin(fptr->nline, \
+				ft_strsub(fptr->next, 0, llen));
+			fptr->bytes_parsed += llen + 1;
+			fptr->next = fptr->next + (llen + 1);
+			if (fptr->next[llen] == '\n')
+				return (1);
+			else
+				ret = read_buffer(file);
 		}
-		if (fptr->bytes_parsed >= fptr->bytes_read)
-		{
-			ret = read(fptr->file_desc, buffer, BUFF_SIZE);
-			if (ret <= 0)
-				return (ret);
-		}
-		llen = ft_strlchr(buffer, '\n');
-		if (llen == 0)
-			return (0);
+		llen = ft_strlchr(fptr->buffer, '\n');
 		if (llen < BUFF_SIZE)
 		{
-			fptr->nline = ft_strjoin(fptr->nline, ft_strsub(buffer, 0, llen));
-			fptr->next = ft_strsub(buffer, llen + 1, \
-				ft_strlchr(buffer + (llen + 1), '\n'));
+			fptr->nline = ft_strjoin(fptr->nline, \
+				ft_strsub(fptr->buffer, 0, llen));
+			fptr->bytes_parsed += llen;
+			fptr->next = ft_strdup(fptr->buffer + (llen + 1));
+			return (1);
 		}
 		else
-			fptr->nline = ft_strjoin(fptr->nline, buffer);
-		fptr->bytes_parsed += llen;
+		{
+			fptr->nline = ft_strjoin(fptr->nline, fptr->buffer);
+			fptr->bytes_parsed += BUFF_SIZE;
+			ret = read_buffer(file);
+		}
 	}
-	return (1);
+	// if (fptr->bytes_parsed <= fptr->bytes_read)
+	// 	return (ret);
+	return (0);
 }
 
 int get_next_line(const int fd, char **line)
@@ -121,7 +123,7 @@ int get_next_line(const int fd, char **line)
 	static t_file	*file;
 	int 			ret;
 
-	if (fd < 3 || !line)
+	if (fd < 0 || !line)
 		return (-1);
 	if (!file)
 		file = init_file(fd);

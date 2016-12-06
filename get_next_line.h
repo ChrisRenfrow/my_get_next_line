@@ -6,14 +6,14 @@
 /*   By: crenfrow <crenfrow@student.42.us.org>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/10/28 12:58:24 by crenfrow          #+#    #+#             */
-/*   Updated: 2016/12/05 00:59:38 by crenfrow         ###   ########.fr       */
+/*   Updated: 2016/12/06 05:17:31 by crenfrow         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef GET_NEXT_LINE_H
 # define GET_NEXT_LINE_H
 
-# define BUFF_SIZE 8
+# define BUFF_SIZE 500
 
 /*
 ** Tour de t_file:
