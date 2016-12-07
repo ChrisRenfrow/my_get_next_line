@@ -6,7 +6,7 @@
 /*   By: crenfrow <crenfrow@student.42.us.org>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/09/21 15:32:53 by crenfrow          #+#    #+#             */
-/*   Updated: 2016/11/01 00:25:00 by crenfrow         ###   ########.fr       */
+/*   Updated: 2016/12/07 04:49:53 by crenfrow         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,8 @@ t_list				*ft_lstget(t_list **alst, int i);
 void				ft_lstaddend(t_list **alst, t_list *new);
 void				*ft_memrealloc(void *ptr, size_t new_size);
 void				*ft_memreallocf(void *ptr, size_t new_size);
+void				*ft_realloc(void *orig, size_t new);
+int					ft_strlchr(char *str, int c);
 /*
 **	==============================[ Part One ]==================================
 */
