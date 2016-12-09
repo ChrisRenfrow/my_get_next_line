@@ -6,7 +6,7 @@
 /*   By: crenfrow <crenfrow@student.42.us.org>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/06 21:31:49 by crenfrow          #+#    #+#             */
-/*   Updated: 2016/12/09 00:57:50 by crenfrow         ###   ########.fr       */
+/*   Updated: 2016/12/09 01:01:14 by crenfrow         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,17 +46,13 @@ int			get_next_line(const int fd, char **line)
 	while (1)
 	{
 		if (!buff[0])
-		{
 			if ((ret = read(fd, buff, BUFF_SIZE)) <= 0)
 				return (ret);
-			buff[ret] = 0;
-		}
 		llen = handle_line(buff, line);
-		if (llen < BUFF_SIZE && buff[llen] == '\n')
+		if (llen < BUFF_SIZE && (buff[llen] == '\n' || buff[llen] == '\0'))
 		{
 			buff = adv_buff(buff, llen);
 			return (1);
 		}
-		ft_strclr(buff);
 	}
 }
