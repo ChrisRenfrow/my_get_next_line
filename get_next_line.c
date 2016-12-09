@@ -6,7 +6,7 @@
 /*   By: crenfrow <crenfrow@student.42.us.org>      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/12/06 21:31:49 by crenfrow          #+#    #+#             */
-/*   Updated: 2016/12/09 01:01:14 by crenfrow         ###   ########.fr       */
+/*   Updated: 2016/12/09 03:21:50 by crenfrow         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,20 @@ static char	*adv_buff(char *buff, int llen)
 	return (tmp);
 }
 
+static int	read_buff(const int fd, char **line, char **buff)
+{
+	int ret;
+
+	if ((ret = read(fd, *buff, BUFF_SIZE)) <= 0)
+	{
+		handle_line(*buff, line);
+		if (*line[0])
+			return (1);
+		return (ret);
+	}
+	return (-42);
+}
+
 int			get_next_line(const int fd, char **line)
 {
 	static char		*buff;
@@ -46,13 +60,14 @@ int			get_next_line(const int fd, char **line)
 	while (1)
 	{
 		if (!buff[0])
-			if ((ret = read(fd, buff, BUFF_SIZE)) <= 0)
+			if ((ret = read_buff(fd, line, &buff)) != -42)
 				return (ret);
 		llen = handle_line(buff, line);
-		if (llen < BUFF_SIZE && (buff[llen] == '\n' || buff[llen] == '\0'))
+		if (llen < BUFF_SIZE && buff[llen] == '\n')
 		{
 			buff = adv_buff(buff, llen);
 			return (1);
 		}
+		ft_strclr(buff);
 	}
 }
